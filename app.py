@@ -45,18 +45,20 @@ df = df.rename(columns = {'duration_ms' : 'duration_s'})
 #Dropdown to select an artist
 artist = st.selectbox('Select an artist:', options = artist_list)
 
+#ALL ARTISTS
 if artist == 'All Artists':
 
     st.dataframe(df)
-    tab1, tab2 = st.tabs(['Average Song Length','Average Song Acousticness'])
+    tab1, tab2, tab3 = st.tabs(['Length','Acousticness', 'Tempo'])
     
     acous_avg = df.groupby('year')['acousticness'].mean().reset_index()
     durat_avg = df.groupby('year')['duration_s'].mean().reset_index()
+    tempo_avg = df.groupby('year')['tempo'].mean().reset_index()
 
     with tab1:
     
         col1, col2 = st.columns(2)
-
+        # Scatterplot
         with col1:
             fig, ax = plt.subplots()
             ax.scatter(durat_avg['year'], durat_avg['duration_s'] , color='#1DB954')
@@ -64,22 +66,53 @@ if artist == 'All Artists':
             ax.set_xlabel('Year')
             ax.set_ylabel('Length (in seconds)')
             st.pyplot(fig)
-        
+        # Histogram
         with col2:
-             fig, ax = plt.subplots()
-             ax.hist(x = df['duration_s'], color = '#1DB954', bins = 1000)
-             ax.set_title('Distribution of Song Length')
-             ax.set_xlim(left = 100, right = 700)
-             st.pyplot(fig)
+            fig, ax = plt.subplots()
+            ax.hist(x = df['duration_s'], color = '#1DB954', bins = 1000)
+            ax.set_title('Distribution of Song Length')
+            ax.set_xlim(left = 100, right = 700)
+            ax.set_xlabel('Length (in seconds)')
+            ax.set_ylabel('Count')
+            st.pyplot(fig)
 
 
     with tab2:
-        fig, ax = plt.subplots()
-        ax.scatter(acous_avg['year'], acous_avg['acousticness'] , color='#1DB954')
-        ax.set_title('Average Acousticness by Year')
-        ax.set_xlabel('Year')
-        ax.set_ylabel('Acousticness')
-        st.pyplot(fig)
+        col1, col2 = st.columns(2)
+        # Scatterplot
+        with col1:
+            fig, ax = plt.subplots()
+            ax.scatter(acous_avg['year'], acous_avg['acousticness'] , color='#1DB954')
+            ax.set_title('Average Acousticness by Year')
+            ax.set_xlabel('Year')
+            ax.set_ylabel('Acousticness')
+            st.pyplot(fig)
+        # Histogram
+        with col2:
+            fig, ax = plt.subplots()
+            ax.hist(x = df['acousticness'], color = '#1DB954', bins = 1000)
+            ax.set_title('Distribution of Song Accousticness')
+            ax.set_xlabel('Acousticness')
+            ax.set_ylabel('Count')
+            ax.set_ylim(bottom = 0, top = 600)
+            st.pyplot(fig)
+
+    with tab3:
+        col1, col2 = st.columns(2)
+        with col1:
+            fig, ax = plt.subplots()
+            ax.scatter(tempo_avg['year'], tempo_avg['tempo'] , color='#1DB954')
+            ax.set_title(f'Average Tempo by Year')
+            ax.set_xlabel('Year')
+            ax.set_ylabel('Tempo (Beats Per Minute)')
+            st.pyplot(fig)
+        
+        with col2:
+            fig, ax = plt.subplots()
+            ax.hist(x = tempo_avg['tempo'], color = '#1DB954', bins = 1000)
+            ax.set_title(f'Distribution of Song Tempo')
+            ax.set_xlabel('Tempo (Beats Per Minute)')
+            st.pyplot(fig)
 else: 
     
     #Reduces the DataFrame to just the selected artist
@@ -90,34 +123,58 @@ else:
     #Display dataframe on the app
     st.dataframe(df_selected)
 
-    tab1, tab2 = st.tabs(['Average Song Length','Average Song Acousticness'])
+    tab1, tab2, tab3 = st.tabs(['Length','Acousticness', 'Tempo'])
     with tab1:
     
         col1, col2 = st.columns(2)
 
         with col1:
             fig, ax = plt.subplots()
-            ax.scatter(df_selected['year'], df_selected['duration_s'] , color='#1DB954')
-            ax.set_title('Song Length by Year')
-            ax.set_xlabel('Year')
+            ax.scatter(df_selected['release_date'], df_selected['duration_s'] , color='#1DB954')
+            ax.set_title(f'Length of Songs by {artist}')
+            ax.set_xlabel('Release Date')
             ax.set_ylabel('Length (in seconds)')
             st.pyplot(fig)
         
         with col2:
              fig, ax = plt.subplots()
              ax.hist(x = df_selected['duration_s'], color = '#1DB954', bins = 50)
-             ax.set_title('Distribution of Song Length')
+             ax.set_title(f'Distribution of the Lengths of Songs by {artist}')
              ax.set_xlabel('Song Length')
              st.pyplot(fig)
 
     with tab2:
-        fig, ax = plt.subplots()
-        ax.scatter(df_selected['release_date'], df_selected['acousticness'] , color='#1DB954')
-        ax.set_title('Acousticness')
-        ax.set_xlabel('Year')
-        ax.set_ylabel('Acousticness')
-        ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
-        ax.xaxis.set_major_locator(mdates.YearLocator(1)) 
-        st.pyplot(fig)
+        col1, col2 = st.columns(2)
+        with col1:
+            fig, ax = plt.subplots()
+            ax.scatter(df_selected['release_date'], df_selected['acousticness'] , color='#1DB954')
+            ax.set_title(f'Acousticness of Songs by {artist}')
+            ax.set_xlabel('Release Date')
+            ax.set_ylabel('Acousticness')
+            st.pyplot(fig)
+        
+        with col2:
+            fig, ax = plt.subplots()
+            ax.hist(x = df_selected['acousticness'], color = '#1DB954', bins = 50)
+            ax.set_title(f'Distribution of the Acousticness of Songs by {artist}')
+            ax.set_xlabel('Acousticness')
+            ax.set_ylabel('Count')
+            st.pyplot(fig)
+    with tab3:
+        col1, col2 = st.columns(2)
+        with col1:
+            fig, ax = plt.subplots()
+            ax.scatter(df_selected['release_date'], df_selected['tempo'] , color='#1DB954')
+            ax.set_title(f'Tempo of Songs by {artist}')
+            ax.set_xlabel('Release Date')
+            ax.set_ylabel('Tempo (Beats Per Minute)')
+            st.pyplot(fig)
+        
+        with col2:
+            fig, ax = plt.subplots()
+            ax.hist(x = df_selected['tempo'], color = '#1DB954', bins = 50)
+            ax.set_title(f'Distribution of the Tempo of Songs by {artist}')
+            ax.set_xlabel('Tempo (Beats Per Minute)')
+            st.pyplot(fig)
     
     
