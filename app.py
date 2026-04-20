@@ -17,30 +17,15 @@ plt.style.use('dark_background')
 st.set_page_config(page_title="Artist Exploration", layout = 'wide')
 
 #Load in data and section off by artist
-DATA_PATH = 'data.csv'
-df = pd.read_csv(DATA_PATH)
-
-#Seperate out the lists in the artist column
-df['artists'] = df['artists'].apply(ast.literal_eval)
-# One row per artist
-df = df.explode('artists')
+DATA_PATH = 'app_data.csv'
 
 #Filter out artists with less than 40 songs and less than 10 unique years
 df = df.groupby('artists').filter(lambda x: len(x) >= 40).reset_index(drop = True)
 df = df.groupby('artists').filter(lambda x: x['year'].nunique() >= 10)
 
-#Filter out classical artists & music producers, they dont work well with what we hope to display
-df = df.groupby('artists').filter(lambda x: x['acousticness'].mean() <= .75)
-
 #Creates a unique list for every artist
 artist_list = df['artists'].unique().tolist()
 artist_list.insert(0, 'All Artists')
-
-#Convert miliseconds into seconds and rename the column
-df = df[df['duration_ms'] > 53000]
-df['duration_ms'] = df['duration_ms']/1000
-df = df.rename(columns = {'duration_ms' : 'duration_s'})
-
 
 #Dropdown to select an artist
 artist = st.selectbox('Select an artist:', options = artist_list)
