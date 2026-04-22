@@ -72,7 +72,7 @@ Additional commands for analysis:
 *All of these functions can be loaded in through the `spotify_tools.analysis` package*
 
 #### Extra Features
-While designing the app, I feature I wanted to add was the ability to find songs similar to the selected song. The command `recommend_similar()` does exactly that. By running the below command, you will get *n* amounts of songs similar to your selected song.
+While designing the app, a feature I wanted to add was the ability to find songs similar to the selected song. The command `recommend_similar()` does exactly that. By running the below command, you will get *n* amounts of songs similar to your selected song.
 ```{python}
 from spotify_tools.recommend import recommend_similar
 

@@ -1,6 +1,10 @@
-# Spotify Project Documentation
+---
+title: "Spotify Project Documentation"
+execute:
+    enabled: false
+---
 
-### Python Package Features
+## Python Package Features
 ##### Data Cleaning Functions
 
 ```{python}
@@ -13,7 +17,7 @@ def column_cleaning(df):
     df['explicit'] = df['explicit'].map({1: 'Yes', 0: 'No'})
     return df
 ```
-The spotifyAPI defaults to having song length in miliseconds. This function converts that to seconds to make the numbers smaller and easier to understand. Additionally this function changes the 1's and 0's in the explicit column to Yes and No.
+The Spotify API defaults to storing song length in milliseconds. This function converts that to seconds to make values smaller and easier to understand. Additionally, this function changes the 1s and 0s in the `explicit` column to Yes and No.
 
 ```{python}
 
@@ -23,7 +27,7 @@ def reduce_list(df):
     df = df.groupby('artists').filter(lambda x: x['acousticness'].mean() <= .75)
     return df
 ```
-This function applies three different filters on the data. The first filter looks for any artist with less than 40 songs and then removes them from the dataframe. The second applied filter looks for any artist with less than 10 unique years and removes them. The final filter, filters out classical or instrumental artists. These filters help the data to work better for individual artist analysis, especially on the app.
+This function applies three different filters to the data. The first filter removes artists with fewer than 40 songs. The second removes artists with fewer than 10 unique years. The final filter removes highly acoustic artists, which often includes classical or instrumental catalogs. These filters help the data work better for individual artist analysis, especially in the app.
 
 ```{python}
 def fix_artists(df):
@@ -33,9 +37,9 @@ def fix_artists(df):
     df = df.explode('artists')
     return df
 ```
-This function is needed to help work with the dataframe. The *artist* column is originally stored as a list for any song that has more than one artist. To do any analysis or visualization, it's necessary so seperate out the lsit into seperate entries. 
+This function is needed to make the DataFrame easier to work with. The *artists* column is originally stored as a list when a song has multiple artists. For analysis and visualization, it is necessary to separate the list into separate entries.
 
-##### Analysis Function
+##### Analysis Functions
 
 ```{python}
 def artist_summary(df, artist):
@@ -45,7 +49,7 @@ def artist_summary(df, artist):
     return df.describe()[['duration_s', 'energy', 'acousticness', 'tempo']]
 
 ```
-This function uses the built-in function of describe to create a table that inlcudes all the summary stats of all the listed variables.
+This function uses the built-in `describe()` function to create a table that includes summary statistics for the listed variables.
 
 ```{python}
 
@@ -56,7 +60,7 @@ def feature_trend(df, feature):
 
     return df.groupby('year')[feature].mean().reset_index()
 ```
-This function is very useful for analysis. It allows for the input of the desired feature. It outputs a list of all the years with the calculated average for the selected feature. Useful in seeing how specific aspects of music has changed over time.
+This function is useful for analysis because it accepts a selected feature and returns each year with that feature's average value. It is useful for seeing how specific aspects of music have changed over time.
 
 
 ```{python}
@@ -83,7 +87,7 @@ def top_songs(df, feature, n=10):
     # Return clean output
     return top[['name', 'artists', feature]]
 ```
-This function takes the inputted feature and outputs a list of the top 10 songs of that feature.
+This function takes the selected feature and returns the top 10 songs ranked by that feature.
 
 ```{python}
 def song_variability(df):
@@ -96,7 +100,7 @@ def song_variability(df):
 
     return grouped.sort_values('overall_variability', ascending=False)
 ```
-This function is great for looking at the consistency of artists across the board. It takes the 5 different variables and calculates the standard deviation. Using that, it creates the overall variability by taking the mean of all the standard deviations. This is used to see who is the most and 
+This function is useful for measuring artist consistency. It takes five variables, calculates each artist's standard deviation for those variables, and then computes overall variability as the mean of those standard deviations. This helps identify which artists are the most and least variable across these features.
 
 ```{python}
 def feature_correlations(df):
@@ -105,7 +109,7 @@ def feature_correlations(df):
 
     return df[features].corr()
 ```
-This function takes the inputs of *'duration_s', 'energy', 'acousticness', 'tempo', and 'valence'* and then uses the built-in python function to create a 5x5 matrix that displays the correlation between variables.
+This function uses *'duration_s', 'energy', 'acousticness', 'tempo', and 'valence'* and then applies the built-in Python correlation method to create a 5x5 matrix showing the relationship between features.
 
 
 ##### Recommendation Function
@@ -146,13 +150,188 @@ def recommend_similar(df, song_name, n=5):
 
     return df.iloc[top_idx][['name', 'artists']]
 ```
-This function allows the user to see *n* amount of songs that are most similar to the selected song. This function uses the `cosine_similarity()` function from the `sklearn` package. This function allows us to find similarity between points by calculating the cosine value between them in a multidimensional space. It's a simple form 
+This function allows the user to see *n* songs that are most similar to the selected song. It uses the `cosine_similarity()` function from the `sklearn` package to measure similarity in a multidimensional feature space.
 
 
-```{python}
-
-```
+##### Streamlit App Functionality
 
 ```{python}
+#Load in Libraries
+import streamlit as st
+import pandas as pd
+import matplotlib.pyplot as plt
 
+from spotify_tools import recommend_similar
+
+#Plot formatting
+plt.rcParams.update({
+    "figure.facecolor": (0, 0, 0, 0),
+    "axes.facecolor": (0, 0, 0, 0),
+    "savefig.transparent": True
+})
+
+st.set_page_config(page_title="Artist Exploration", layout='wide')
+
+#Load in data
+DATA_PATH = 'app_data.csv'
+df = pd.read_csv(DATA_PATH)
 ```
+This first section of the app loads the required packages, imports the custom `recommend_similar` function, formats plot backgrounds to match the app style, and reads in the cleaned dataset used for all visuals and tables.
+
+```{python}
+#Creates a unique list for every artist
+artist_list = df['artists'].unique().tolist()
+artist_list.insert(0, 'All Artists')
+
+#Title and artist selector
+st.title("Spotify Artist Exploration")
+artist = st.selectbox('Select an artist:', options=artist_list)
+```
+This section creates the app title and interactive dropdown menu. The dropdown includes every unique artist plus an `All Artists` option so users can choose between a full dataset view or a specific artist view.
+
+```{python}
+#ALL ARTISTS
+if artist == 'All Artists':
+    st.dataframe(df)
+    tab1, tab2, tab3 = st.tabs(['Length', 'Acousticness', 'Tempo'])
+
+    acous_avg = df.groupby('year')['acousticness'].mean().reset_index()
+    durat_avg = df.groupby('year')['duration_s'].mean().reset_index()
+    tempo_avg = df.groupby('year')['tempo'].mean().reset_index()
+```
+When `All Artists` is selected, the app displays the complete dataframe and creates three tabs for Length, Acousticness, and Tempo. It also calculates average values by year so the scatterplots can show how each feature changes over time.
+
+```{python}
+    # Song length
+    with tab1:
+        col1, col2 = st.columns(2)
+        # Scatterplot
+        with col1:
+            fig, ax = plt.subplots()
+            ax.scatter(durat_avg['year'], durat_avg['duration_s'] , color='#1DB954')
+            ax.set_title('Average Song Length by Year')
+            ax.set_xlabel('Year')
+            ax.set_ylabel('Length (in seconds)')
+            ax.set_ylim(0,400)
+            st.pyplot(fig)
+        # Histogram
+        with col2:
+            fig, ax = plt.subplots()
+            ax.hist(x = df['duration_s'], color = '#1DB954', bins = 1000)
+            ax.set_title('Distribution of Song Length')
+            ax.set_xlim(left = 100, right = 700)
+            ax.set_xlabel('Length (in seconds)')
+            ax.set_ylabel('Count')
+            st.pyplot(fig)
+
+    # Acousticness
+    with tab2:
+        col1, col2 = st.columns(2)
+        # Scatterplot
+        with col1:
+            fig, ax = plt.subplots()
+            ax.scatter(acous_avg['year'], acous_avg['acousticness'] , color='#1DB954')
+            ax.set_title('Average Acousticness by Year')
+            ax.set_xlabel('Year')
+            ax.set_ylabel('Acousticness')
+            st.pyplot(fig)
+        # Histogram
+        with col2:
+            fig, ax = plt.subplots()
+            ax.hist(x = df['acousticness'], color = '#1DB954', bins = 1000)
+            ax.set_title('Distribution of Song Acousticness')
+            ax.set_xlabel('Acousticness')
+            ax.set_ylabel('Count')
+            ax.set_ylim(bottom = 0, top = 600)
+            st.pyplot(fig)
+
+    # Tempo
+    with tab3:
+        col1, col2 = st.columns(2)
+        with col1:
+            fig, ax = plt.subplots()
+            ax.scatter(tempo_avg['year'], tempo_avg['tempo'] , color='#1DB954')
+            ax.set_title('Average Tempo by Year')
+            ax.set_xlabel('Year')
+            ax.set_ylabel('Tempo (Beats Per Minute)')
+            st.pyplot(fig)
+        with col2:
+            fig, ax = plt.subplots()
+            ax.hist(x = df['tempo'], color = '#1DB954', bins = 800)
+            ax.set_title('Distribution of Song Tempo')
+            ax.set_xlabel('Tempo (Beats Per Minute)')
+            ax.set_xlim(50, 220)
+            st.pyplot(fig)
+```
+Each of the three tabs in the `All Artists` view follows the same two-column layout. The left column shows a scatterplot of that feature's yearly average over time, using pre-computed averages (`durat_avg`, `acous_avg`, `tempo_avg`). The right column shows a histogram of that feature across every song in the full dataset, giving the user a sense of its overall distribution.
+
+```{python}
+# INDIVIDUAL ARTISTS
+else:
+    df_selected = df[df['artists'] == artist].reset_index()
+    df_selected = df_selected.groupby('year').filter(lambda x: len(x) >= 3).reset_index(drop=True)
+
+    st.dataframe(df_selected)
+
+    song = st.selectbox("Pick a song:", df_selected['name'])
+    if st.button("Recommend"):
+        recs = recommend_similar(df, song)
+        st.dataframe(recs)
+```
+When a single artist is selected, the app filters to that artist, keeps years with at least three songs, and shows the resulting table. It also lets the user choose a song and click `Recommend` to return similar songs using the recommendation function from the package.
+
+```{python}
+with tab1:
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            fig, ax = plt.subplots()
+            ax.scatter(df_selected['year'], df_selected['duration_s'] , color='#1DB954')
+            ax.set_title(f'Length of Songs by {artist}')
+            ax.set_xlabel('Release Year')
+            ax.set_ylabel('Length (in seconds)')
+            st.pyplot(fig)
+
+        with col2:
+             fig, ax = plt.subplots()
+             ax.hist(x = df_selected['duration_s'], color = '#1DB954', bins = 50)
+             ax.set_title(f'Distribution of the Lengths of Songs by {artist}')
+             ax.set_xlabel('Song Length')
+             st.pyplot(fig)
+
+    with tab2:
+        col1, col2 = st.columns(2)
+        with col1:
+            fig, ax = plt.subplots()
+            ax.scatter(df_selected['year'], df_selected['acousticness'] , color='#1DB954')
+            ax.set_title(f'Acousticness of Songs by {artist}')
+            ax.set_xlabel('Release Year')
+            ax.set_ylabel('Acousticness')
+            st.pyplot(fig)
+
+        with col2:
+            fig, ax = plt.subplots()
+            ax.hist(x = df_selected['acousticness'], color = '#1DB954', bins = 50)
+            ax.set_title(f'Distribution of the Acousticness of Songs by {artist}')
+            ax.set_xlabel('Acousticness')
+            ax.set_ylabel('Count')
+            st.pyplot(fig)
+    with tab3:
+        col1, col2 = st.columns(2)
+        with col1:
+            fig, ax = plt.subplots()
+            ax.scatter(df_selected['year'], df_selected['tempo'] , color='#1DB954')
+            ax.set_title(f'Tempo of Songs by {artist}')
+            ax.set_xlabel('Release Year')
+            ax.set_ylabel('Tempo (Beats Per Minute)')
+            st.pyplot(fig)
+
+        with col2:
+            fig, ax = plt.subplots()
+            ax.hist(x = df_selected['tempo'], color = '#1DB954', bins = 50)
+            ax.set_title(f'Distribution of the Tempo of Songs by {artist}')
+            ax.set_xlabel('Tempo (Beats Per Minute)')
+            st.pyplot(fig)
+```
+This final section builds the visual analysis area for an individual artist. In `tab1`, the app shows a scatterplot of song length by release year and a histogram of that artist's song-length distribution. In `tab2`, it repeats that pattern for acousticness, showing both change over time and the feature distribution. In `tab3`, it does the same for tempo, including units in beats per minute. Each tab uses two side-by-side columns so users can compare trend and distribution at the same time.

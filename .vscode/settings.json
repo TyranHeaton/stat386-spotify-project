@@ -1,0 +1,15 @@
+{
+	"python.defaultInterpreterPath": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+	"python.analysis.diagnosticMode": "workspace",
+	"python.analysis.typeCheckingMode": "basic",
+	"python.analysis.exclude": [
+		"**/.venv/**"
+	],
+	"python.analysis.ignore": [
+		"**/.venv/**"
+	],
+	"python.analysis.diagnosticSeverityOverrides": {
+		"reportMissingImports": "none",
+		"reportMissingTypeStubs": "none"
+	}
+}

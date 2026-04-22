@@ -1,10 +1,7 @@
 #Load in Libraries
 import streamlit as st
-import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-import ast 
 
 from spotify_tools import recommend_similar
 
@@ -14,7 +11,6 @@ plt.rcParams.update({
     "axes.facecolor": (0, 0, 0, 0),
     "savefig.transparent": True
 })
-plt.style.use('dark_background')
 
 # Custom text style
 st.set_page_config(page_title="Artist Exploration", layout = 'wide')
@@ -94,7 +90,7 @@ if artist == 'All Artists':
         with col1:
             fig, ax = plt.subplots()
             ax.scatter(tempo_avg['year'], tempo_avg['tempo'] , color='#1DB954')
-            ax.set_title(f'Average Tempo by Year')
+            ax.set_title('Average Tempo by Year')
             ax.set_xlabel('Year')
             ax.set_ylabel('Tempo (Beats Per Minute)')
             st.pyplot(fig)
@@ -102,7 +98,7 @@ if artist == 'All Artists':
         with col2:
             fig, ax = plt.subplots()
             ax.hist(x = df['tempo'], color = '#1DB954', bins = 800)
-            ax.set_title(f'Distribution of Song Tempo')
+            ax.set_title('Distribution of Song Tempo')
             ax.set_xlabel('Tempo (Beats Per Minute)')
             ax.set_xlim(50, 220)
             st.pyplot(fig)
