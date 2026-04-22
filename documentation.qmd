@@ -1,0 +1,158 @@
+# Spotify Project Documentation
+
+### Python Package Features
+##### Data Cleaning Functions
+
+```{python}
+def column_cleaning(df):
+#Convert miliseconds into seconds and rename the column
+    df = df[df['duration_ms'] > 53000]
+    df['duration_ms'] = df['duration_ms']/1000
+    df = df.rename(columns = {'duration_ms' : 'duration_s'})
+
+    df['explicit'] = df['explicit'].map({1: 'Yes', 0: 'No'})
+    return df
+```
+The spotifyAPI defaults to having song length in miliseconds. This function converts that to seconds to make the numbers smaller and easier to understand. Additionally this function changes the 1's and 0's in the explicit column to Yes and No.
+
+```{python}
+
+def reduce_list(df):
+    df = df.groupby('artists').filter(lambda x: len(x) >= 40).reset_index(drop = True)
+    df = df.groupby('artists').filter(lambda x: x['year'].nunique() >= 10)
+    df = df.groupby('artists').filter(lambda x: x['acousticness'].mean() <= .75)
+    return df
+```
+This function applies three different filters on the data. The first filter looks for any artist with less than 40 songs and then removes them from the dataframe. The second applied filter looks for any artist with less than 10 unique years and removes them. The final filter, filters out classical or instrumental artists. These filters help the data to work better for individual artist analysis, especially on the app.
+
+```{python}
+def fix_artists(df):
+    #Seperate out the lists in the artist column
+    df['artists'] = df['artists'].apply(ast.literal_eval)
+    # One row per artist
+    df = df.explode('artists')
+    return df
+```
+This function is needed to help work with the dataframe. The *artist* column is originally stored as a list for any song that has more than one artist. To do any analysis or visualization, it's necessary so seperate out the lsit into seperate entries. 
+
+##### Analysis Function
+
+```{python}
+def artist_summary(df, artist):
+
+    df = df[df['artists'] == artist]
+
+    return df.describe()[['duration_s', 'energy', 'acousticness', 'tempo']]
+
+```
+This function uses the built-in function of describe to create a table that inlcudes all the summary stats of all the listed variables.
+
+```{python}
+
+def feature_trend(df, feature):
+
+    df = df.copy()
+    df[feature] = pd.to_numeric(df[feature], errors='coerce')
+
+    return df.groupby('year')[feature].mean().reset_index()
+```
+This function is very useful for analysis. It allows for the input of the desired feature. It outputs a list of all the years with the calculated average for the selected feature. Useful in seeing how specific aspects of music has changed over time.
+
+
+```{python}
+def top_songs(df, feature, n=10):
+
+    df = df.copy()
+
+    # Check column exists
+    if feature not in df.columns:
+        raise ValueError(f"{feature} is not a valid column")
+
+    # Convert to numeric safely
+    df[feature] = pd.to_numeric(df[feature], errors='coerce')
+
+    # Drop missing values
+    df = df.dropna(subset=[feature])
+
+    # Remove duplicates
+    df = df.drop_duplicates(subset=['name', 'artists'])
+
+    # Sort and select top n
+    top = df.sort_values(feature, ascending=False).head(n)
+
+    # Return clean output
+    return top[['name', 'artists', feature]]
+```
+This function takes the inputted feature and outputs a list of the top 10 songs of that feature.
+
+```{python}
+def song_variability(df):
+
+    features = ['duration_s', 'energy', 'acousticness', 'tempo', 'valence']
+
+    grouped = df.groupby('artists')[features].std()
+
+    grouped['overall_variability'] = grouped.mean(axis=1)
+
+    return grouped.sort_values('overall_variability', ascending=False)
+```
+This function is great for looking at the consistency of artists across the board. It takes the 5 different variables and calculates the standard deviation. Using that, it creates the overall variability by taking the mean of all the standard deviations. This is used to see who is the most and 
+
+```{python}
+def feature_correlations(df):
+
+    features = ['duration_s', 'energy', 'acousticness', 'tempo', 'valence']
+
+    return df[features].corr()
+```
+This function takes the inputs of *'duration_s', 'energy', 'acousticness', 'tempo', and 'valence'* and then uses the built-in python function to create a 5x5 matrix that displays the correlation between variables.
+
+
+##### Recommendation Function
+
+```{python}
+from sklearn.metrics.pairwise import cosine_similarity
+
+
+FEATURE_COLS = [
+ 'energy', 'acousticness',
+    'tempo', 'valence'
+]
+def recommend_similar(df, song_name, n=5):
+
+    df = df.copy()
+
+    # Convert to numeric
+    for col in FEATURE_COLS:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+
+    df = df.dropna(subset=FEATURE_COLS).reset_index(drop=True)
+
+    if song_name not in df['name'].values:
+        raise ValueError("Song not found")
+
+    # Feature matrix
+    X = df[FEATURE_COLS].values
+
+    # Get the selected song vector
+    idx = df[df['name'] == song_name].index[0]
+    song_vec = X[idx].reshape(1, -1)
+
+    # 🔥 ONLY compute similarity to this one song
+    sim_scores = cosine_similarity(song_vec, X).flatten()
+
+    # Get top matches
+    top_idx = sim_scores.argsort()[::-1][1:n+1]
+
+    return df.iloc[top_idx][['name', 'artists']]
+```
+This function allows the user to see *n* amount of songs that are most similar to the selected song. This function uses the `cosine_similarity()` function from the `sklearn` package. This function allows us to find similarity between points by calculating the cosine value between them in a multidimensional space. It's a simple form 
+
+
+```{python}
+
+```
+
+```{python}
+
+```

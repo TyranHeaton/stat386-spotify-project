@@ -7,7 +7,7 @@ from .clean import (
 from .analysis import (
     top_songs,
     artist_summary,
-    artist_variability,
+    song_variability,
     feature_trend,
     feature_correlations
 )
