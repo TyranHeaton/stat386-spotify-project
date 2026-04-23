@@ -1,7 +1,4 @@
-import pandas as pd
 import ast
-
-df = pd.read_csv('data.csv')
 
 def fix_artists(df):
     #Seperate out the lists in the artist column

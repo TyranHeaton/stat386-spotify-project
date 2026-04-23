@@ -1,0 +1,24 @@
+# Python virtual environments
+.venv/
+venv/
+
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Packaging artifacts
+dist/
+build/
+*.egg-info/
+
+# Quarto rendered outputs (keep source .qmd)
+*_files/
+*.html
+
+# Notebook checkpoints
+.ipynb_checkpoints/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
