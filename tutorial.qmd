@@ -1,3 +1,13 @@
+---
+title: "Spotify Data Tutorial"
+format:
+  html:
+    toc: true
+    code-fold: true
+execute:
+  enabled: false
+---
+
 # Spotify Data Tutorial
 
 This package allows users to:
